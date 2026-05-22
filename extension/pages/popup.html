@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>FocusLens</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      width: 320px;
+      background: #0a0a0f;
+      color: #e8e8f0;
+      font-family: Arial, sans-serif;
+      font-size: 13px;
+    }
+
+    /* Header */
+    .header {
+      background: #12121a;
+      padding: 14px 16px;
+      border-bottom: 1px solid #1e1e2e;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .logo { font-size: 20px; }
+
+    .logo-text {
+      font-size: 15px;
+      font-weight: bold;
+      color: #7c6aff;
+    }
+
+    /* Live tracking box */
+    .live-box {
+      margin: 12px;
+      background: #12121a;
+      border: 1px solid #1e1e2e;
+      border-radius: 10px;
+      padding: 12px;
+    }
+
+    .live-label {
+      font-size: 10px;
+      color: #6b6b80;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .dot {
+      width: 6px; height: 6px;
+      background: #00d4a0;
+      border-radius: 50%;
+      animation: blink 1.5s infinite;
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.2; }
+    }
+
+    .site-name {
+      font-size: 16px;
+      font-weight: bold;
+      margin-bottom: 6px;
+    }
+
+    .site-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .badge {
+      font-size: 10px;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-weight: bold;
+    }
+
+    .productive  { background: rgba(0,212,160,0.15); color: #00d4a0; }
+    .neutral     { background: rgba(245,158,11,0.15); color: #f59e0b; }
+    .unproductive{ background: rgba(244,63,94,0.15);  color: #f43f5e; }
+    .other       { background: rgba(107,107,128,0.2); color: #9999aa; }
+
+    .timer {
+      font-size: 20px;
+      font-weight: bold;
+      font-family: monospace;
+    }
+
+    /* Stats */
+    .section-title {
+      font-size: 10px;
+      color: #6b6b80;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin: 0 12px 6px;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 8px;
+      margin: 0 12px 12px;
+    }
+
+    .stat {
+      background: #12121a;
+      border: 1px solid #1e1e2e;
+      border-radius: 8px;
+      padding: 10px;
+      text-align: center;
+    }
+
+    .stat-value {
+      font-size: 15px;
+      font-weight: bold;
+      font-family: monospace;
+      margin-bottom: 3px;
+    }
+
+    .stat-label { font-size: 10px; color: #6b6b80; }
+    .stat.productive .stat-value { color: #00d4a0; }
+    .stat.neutral    .stat-value { color: #f59e0b; }
+    .stat.unproductive .stat-value { color: #f43f5e; }
+
+    /* Score bar */
+    .score-box {
+      margin: 0 12px 12px;
+      background: #12121a;
+      border: 1px solid #1e1e2e;
+      border-radius: 10px;
+      padding: 12px;
+    }
+
+    .score-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+      font-size: 12px;
+    }
+
+    .score-pct {
+      font-weight: bold;
+      color: #7c6aff;
+      font-family: monospace;
+    }
+
+    .bar-bg {
+      height: 6px;
+      background: #1e1e2e;
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #7c6aff, #00d4a0);
+      border-radius: 3px;
+      transition: width 0.6s ease;
+    }
+
+    /* Dashboard button */
+    .footer {
+      margin: 0 12px 12px;
+    }
+
+    .dash-btn {
+      width: 100%;
+      padding: 10px;
+      background: linear-gradient(135deg, #7c6aff, #a78bfa);
+      border: none;
+      border-radius: 8px;
+      color: white;
+      font-size: 13px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .dash-btn:hover { opacity: 0.85; }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <div class="header">
+    <div class="logo">🔍</div>
+    <div class="logo-text">FocusLens</div>
+  </div>
+
+  <!-- Live Tracking -->
+  <div class="live-box">
+    <div class="live-label">
+      <div class="dot"></div> Now Tracking
+    </div>
+    <div class="site-name" id="siteName">Loading...</div>
+    <div class="site-meta">
+      <span class="badge other" id="siteBadge">—</span>
+      <span class="timer" id="liveTimer">00:00</span>
+    </div>
+  </div>
+
+  <!-- Today Stats -->
+  <div class="section-title">Today's Summary</div>
+  <div class="stats">
+    <div class="stat productive">
+      <div class="stat-value" id="prodTime">—</div>
+      <div class="stat-label">Productive</div>
+    </div>
+    <div class="stat neutral">
+      <div class="stat-value" id="neutTime">—</div>
+      <div class="stat-label">Neutral</div>
+    </div>
+    <div class="stat unproductive">
+      <div class="stat-value" id="unprodTime">—</div>
+      <div class="stat-label">Distraction</div>
+    </div>
+  </div>
+
+  <!-- Focus Score -->
+  <div class="score-box">
+    <div class="score-row">
+      <span>Focus Score</span>
+      <span class="score-pct" id="scorePct">0%</span>
+    </div>
+    <div class="bar-bg">
+      <div class="bar-fill" id="scoreBar" style="width:0%"></div>
+    </div>
+  </div>
+
+  <!-- Dashboard Button -->
+  <div class="footer">
+    <button class="dash-btn" id="dashBtn">📊 Open Full Dashboard</button>
+  </div>
+
+<script src="popup.js"></script>
+</body>
+</html>

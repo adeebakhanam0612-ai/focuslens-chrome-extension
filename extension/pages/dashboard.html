@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>FocusLens Dashboard</title>
+  <script src="chart.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #060610;
+      color: #e2e2f0;
+      font-family: Arial, sans-serif;
+      font-size: 14px;
+    }
+
+    /* ── Layout ── */
+    .layout {
+      display: grid;
+      grid-template-columns: 200px 1fr;
+      min-height: 100vh;
+    }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      background: #0d0d1a;
+      border-right: 1px solid #1a1a30;
+      padding: 24px 0;
+      position: fixed;
+      top: 0; left: 0; bottom: 0;
+      width: 200px;
+    }
+
+    .brand {
+      padding: 0 16px 20px;
+      border-bottom: 1px solid #1a1a30;
+      font-size: 18px;
+      font-weight: bold;
+      color: #7c6aff;
+    }
+
+    .nav { padding: 16px 10px; }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 10px;
+      border-radius: 8px;
+      cursor: pointer;
+      color: #5a5a7a;
+      font-size: 13px;
+      margin-bottom: 4px;
+      transition: all 0.15s;
+    }
+
+    .nav-item:hover { background: #111122; color: #e2e2f0; }
+
+    .nav-item.active {
+      background: rgba(124,106,255,0.15);
+      color: #a78bfa;
+    }
+
+    /* ── Main ── */
+    .main {
+      margin-left: 200px;
+      padding: 28px;
+    }
+
+    .page { display: none; }
+    .page.active { display: block; }
+
+    /* ── Page Header ── */
+    .page-title {
+      font-size: 22px;
+      font-weight: bold;
+      margin-bottom: 4px;
+    }
+
+    .page-sub {
+      color: #5a5a7a;
+      font-size: 13px;
+      margin-bottom: 24px;
+    }
+
+    /* ── KPI Cards ── */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      margin-bottom: 22px;
+    }
+
+    .kpi {
+      background: #111122;
+      border: 1px solid #1a1a30;
+      border-radius: 12px;
+      padding: 16px 18px;
+    }
+
+    .kpi-label {
+      font-size: 11px;
+      color: #5a5a7a;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      margin-bottom: 8px;
+    }
+
+    .kpi-value {
+      font-size: 24px;
+      font-weight: bold;
+      font-family: monospace;
+    }
+
+    .kpi-sub { font-size: 11px; color: #5a5a7a; margin-top: 4px; }
+
+    .kpi.total  .kpi-value { color: #a78bfa; }
+    .kpi.prod   .kpi-value { color: #00d4a0; }
+    .kpi.unprod .kpi-value { color: #f43f5e; }
+    .kpi.score  .kpi-value { color: #7c6aff; }
+
+    /* ── Chart Cards ── */
+    .charts-row {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 14px;
+      margin-bottom: 18px;
+    }
+
+    .chart-card {
+      background: #111122;
+      border: 1px solid #1a1a30;
+      border-radius: 12px;
+      padding: 18px;
+    }
+
+    .chart-title {
+      font-size: 13px;
+      font-weight: bold;
+      margin-bottom: 16px;
+      color: #e2e2f0;
+    }
+
+    /* ── Table ── */
+    .table-card {
+      background: #111122;
+      border: 1px solid #1a1a30;
+      border-radius: 12px;
+      overflow: hidden;
+      margin-bottom: 18px;
+    }
+
+    .table-header {
+      padding: 14px 18px;
+      border-bottom: 1px solid #1a1a30;
+      font-size: 13px;
+      font-weight: bold;
+    }
+
+    table { width: 100%; border-collapse: collapse; }
+
+    thead th {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #5a5a7a;
+      text-align: left;
+      padding: 10px 18px;
+      border-bottom: 1px solid #1a1a30;
+    }
+
+    tbody tr { border-bottom: 1px solid #1a1a30; }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: rgba(255,255,255,0.02); }
+    tbody td { padding: 11px 18px; font-size: 13px; }
+
+    .badge {
+      font-size: 10px;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-weight: bold;
+    }
+
+    .badge-productive   { background: rgba(0,212,160,0.15); color: #00d4a0; }
+    .badge-neutral      { background: rgba(245,158,11,0.15); color: #f59e0b; }
+    .badge-unproductive { background: rgba(244,63,94,0.15);  color: #f43f5e; }
+
+    /* ── Weekly Heatmap ── */
+    .heatmap {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .heat-cell {
+      aspect-ratio: 1;
+      border-radius: 6px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      color: #5a5a7a;
+    }
+
+    .heat-day { font-size: 9px; margin-bottom: 4px; }
+
+    /* ── Settings ── */
+    .settings-card {
+      background: #111122;
+      border: 1px solid #1a1a30;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 14px;
+    }
+
+    .settings-title {
+      font-size: 14px;
+      font-weight: bold;
+      margin-bottom: 6px;
+    }
+
+    .settings-sub {
+      font-size: 12px;
+      color: #5a5a7a;
+      margin-bottom: 16px;
+    }
+
+    .custom-form {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .input {
+      flex: 1;
+      background: #0d0d1a;
+      border: 1px solid #1a1a30;
+      border-radius: 7px;
+      padding: 8px 12px;
+      color: #e2e2f0;
+      font-size: 13px;
+      outline: none;
+    }
+
+    .input:focus { border-color: #7c6aff; }
+
+    select.input { cursor: pointer; }
+
+    .btn {
+      padding: 8px 16px;
+      border-radius: 7px;
+      border: none;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: bold;
+      transition: opacity 0.15s;
+    }
+
+    .btn:hover { opacity: 0.85; }
+    .btn-primary { background: #7c6aff; color: white; }
+    .btn-danger  { background: rgba(244,63,94,0.15); color: #f43f5e; border: 1px solid rgba(244,63,94,0.3); }
+
+    .custom-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #0d0d1a;
+      border: 1px solid #1a1a30;
+      border-radius: 7px;
+      padding: 8px 12px;
+      margin-bottom: 6px;
+      font-size: 13px;
+    }
+
+    .remove-btn {
+      background: none;
+      border: none;
+      color: #f43f5e;
+      cursor: pointer;
+      font-size: 16px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="layout">
+
+  <!-- Sidebar -->
+  <nav class="sidebar">
+    <div class="brand">🔍 FocusLens</div>
+    <div class="nav">
+      <div class="nav-item active" data-page="overview">📊 Overview</div>
+      <div class="nav-item" data-page="sites">🌐 All Sites</div>
+      <div class="nav-item" data-page="weekly">📅 Weekly Report</div>
+      <div class="nav-item" data-page="settings">⚙️ Settings</div>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="main">
+
+    <!-- OVERVIEW PAGE -->
+    <div class="page active" id="page-overview">
+      <div class="page-title">Dashboard Overview</div>
+      <div class="page-sub" id="overviewDate">Today</div>
+
+      <div class="kpi-grid">
+        <div class="kpi total">
+          <div class="kpi-label">Total Time</div>
+          <div class="kpi-value" id="kpiTotal">—</div>
+          <div class="kpi-sub">All categories</div>
+        </div>
+        <div class="kpi prod">
+          <div class="kpi-label">Productive</div>
+          <div class="kpi-value" id="kpiProd">—</div>
+          <div class="kpi-sub" id="kpiProdPct">—</div>
+        </div>
+        <div class="kpi unprod">
+          <div class="kpi-label">Distraction</div>
+          <div class="kpi-value" id="kpiUnprod">—</div>
+          <div class="kpi-sub" id="kpiUnprodPct">—</div>
+        </div>
+        <div class="kpi score">
+          <div class="kpi-label">Focus Score</div>
+          <div class="kpi-value" id="kpiScore">—</div>
+          <div class="kpi-sub" id="kpiScoreLabel">—</div>
+        </div>
+      </div>
+
+      <div class="charts-row">
+        <div class="chart-card">
+          <div class="chart-title">Time by Category (Today)</div>
+          <canvas id="barChart" height="200"></canvas>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">Category Split</div>
+          <canvas id="donutChart" height="200"></canvas>
+        </div>
+      </div>
+
+      <div class="chart-card" style="margin-bottom:18px">
+        <div class="chart-title">7-Day Productivity Trend</div>
+        <canvas id="trendChart" height="120"></canvas>
+      </div>
+    </div>
+
+    <!-- ALL SITES PAGE -->
+    <div class="page" id="page-sites">
+      <div class="page-title">All Sites</div>
+      <div class="page-sub">Every domain tracked today</div>
+
+      <div class="table-card">
+        <div class="table-header">Sites Breakdown</div>
+        <table>
+          <thead>
+            <tr>
+              <th>Domain</th>
+              <th>Category</th>
+              <th>Time Spent</th>
+              <th>% of Total</th>
+            </tr>
+          </thead>
+          <tbody id="sitesTable">
+            <tr><td colspan="4" style="text-align:center;padding:30px;color:#5a5a7a">Loading...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- WEEKLY REPORT PAGE -->
+    <div class="page" id="page-weekly">
+      <div class="page-title">Weekly Report</div>
+      <div class="page-sub" id="weekLabel">Last 7 days</div>
+
+      <div class="kpi-grid">
+        <div class="kpi total">
+          <div class="kpi-label">Week Total</div>
+          <div class="kpi-value" id="wkTotal">—</div>
+        </div>
+        <div class="kpi prod">
+          <div class="kpi-label">Productive</div>
+          <div class="kpi-value" id="wkProd">—</div>
+        </div>
+        <div class="kpi unprod">
+          <div class="kpi-label">Distraction</div>
+          <div class="kpi-value" id="wkUnprod">—</div>
+        </div>
+        <div class="kpi score">
+          <div class="kpi-label">Weekly Score</div>
+          <div class="kpi-value" id="wkScore">—</div>
+        </div>
+      </div>
+
+      <div class="chart-card" style="margin-bottom:18px">
+        <div class="chart-title">Daily Breakdown (Last 7 Days)</div>
+        <canvas id="weeklyChart" height="150"></canvas>
+      </div>
+
+      <div class="chart-card">
+        <div class="chart-title">Day Heatmap</div>
+        <div class="heatmap" id="heatmap"></div>
+      </div>
+    </div>
+
+    <!-- SETTINGS PAGE -->
+    <div class="page" id="page-settings">
+      <div class="page-title">Settings</div>
+      <div class="page-sub">Customize your tracking</div>
+
+      <div class="settings-card">
+        <div class="settings-title">Custom Site Categories</div>
+        <div class="settings-sub">Override the category for any website</div>
+        <div class="custom-form">
+          <input class="input" id="customDomain" placeholder="e.g. reddit.com" />
+          <select class="input" id="customCat" style="flex:0 0 140px">
+            <option value="productive">✅ Productive</option>
+            <option value="neutral">🟡 Neutral</option>
+            <option value="unproductive">❌ Unproductive</option>
+          </select>
+          <button class="btn btn-primary" onclick="addCustomSite()">Add</button>
+        </div>
+        <div id="customList"></div>
+      </div>
+
+      <div class="settings-card">
+        <div class="settings-title">Data Management</div>
+        <div class="settings-sub">Export or reset your data</div>
+        <div style="display:flex;gap:10px">
+          <button class="btn btn-primary" onclick="exportCSV()">⬇ Export CSV</button>
+          <button class="btn btn-danger" onclick="clearData()">🗑 Clear All Data</button>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script src="dashboard.js"></script>
+</body>
+</html>
